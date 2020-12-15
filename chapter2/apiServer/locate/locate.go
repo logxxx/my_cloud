@@ -8,12 +8,14 @@ import (
 )
 
 func Locate(name string) string {
-	q := rabbitmq.New(os.Getenv("RABBITMQ_SERVER"))
-	q.Publish("dataServers", name)
-	c := q.Consume()
+	mq := rabbitmq.New(os.Getenv("RABBITMQ_SERVER"))
+	//作为生产者
+	mq.Publish("dataServers", name)
+	//作为消费者
+	c := mq.Consume()
 	go func() {
 		time.Sleep(time.Second)
-		q.Close()
+		mq.Close()
 	}()
 	msg := <- c
 	s, _ := strconv.Unquote(string(msg.Body))

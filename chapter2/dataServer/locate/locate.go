@@ -14,6 +14,7 @@ func Locate(name string) bool {
 func StartLocate() {
 	q := rabbitmq.New(os.Getenv("RABBITMQ_SERVER"))
 	defer q.Close()
+	//一定要绑定exchange，不然收不到apiServer产生的消息
 	q.Bind("dataServers")
 	c := q.Consume()
 	for msg := range c {

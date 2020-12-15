@@ -23,6 +23,7 @@ func New(s string) *RabbitMQ {
 		panic(e)
 	}
 
+	//随机一个queue name，作为mq的name
 	q, e := ch.QueueDeclare(
 		"",
 		false,
@@ -56,13 +57,13 @@ func (q *RabbitMQ) Bind(exchange string) {
 	q.exchange = exchange
 }
 
-func (q *RabbitMQ) Send(queue string, body interface{}) {
+func (q *RabbitMQ) Send(routerKey string, body interface{}) {
 	str, e := json.Marshal(body)
 	if e != nil {
 		panic(e)
 	}
 	e = q.channel.Publish("",
-		queue,
+		routerKey,
 		false,
 		false,
 		amqp.Publishing{
