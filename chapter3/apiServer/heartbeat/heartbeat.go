@@ -2,7 +2,6 @@ package heartbeat
 
 import (
 	"lib/rabbitmq"
-	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -31,15 +30,15 @@ func ListenHeartbeat() {
 
 func removeExpiredDataServer() {
 	for {
-		time.Sleep(5*time.Second)
 		mutex.Lock()
 		for s, t := range dataServers {
-			log.Printf("check heart s:%v t:%v", s, t.Format("15:04:05"))
+			//log.Printf("check heart s:%v t:%v", s, t.Format("15:04:05"))
 			if t.Add(10*time.Second).Before(time.Now()) {
 				delete(dataServers, s)
 			}
 		}
 		mutex.Unlock()
+		time.Sleep(5*time.Second)
 	}
 }
 

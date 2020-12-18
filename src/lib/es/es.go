@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -47,8 +48,14 @@ func getMetadata(name string, versionId int) (meta Metadata, e error) {
 func SearchLatestVersion(name string) (meta Metadata, e error) {
 	url := fmt.Sprintf("http://%s/metadata/_search?q=name:%s&size=1&sort=version:desc",
 		os.Getenv("ES_SERVER"), url.PathEscape(name))
+	log.Println("SearchLatestVersion url:", url)
 	r, e := http.Get(url)
 	if e != nil {
+		log.Printf("SearchLatestVersion http.Get err:%v url:%v\n", e, url)
+		return
+	}
+	if r.StatusCode == http.StatusNotFound {
+		meta.Version = 0
 		return
 	}
 	if r.StatusCode != http.StatusOK {
@@ -66,7 +73,7 @@ func SearchLatestVersion(name string) (meta Metadata, e error) {
 
 func GetMetadata(name string, version int) (Metadata, error) {
 	if version == 0 {
-		SearchLatestVersion(name)
+		return SearchLatestVersion(name)
 	}
 	return getMetadata(name, version)
 }
@@ -74,12 +81,16 @@ func GetMetadata(name string, version int) (Metadata, error) {
 func PutMetadata(name string, version int, size int64, hash string) error {
 	doc := fmt.Sprintf(`{"name":"%s", "version":%d, "size":%d, "hash":"%s"}`,
 		name, version, size, hash)
+	log.Println("PutMetadata doc:", doc)
 	client := http.Client{}
-	url := fmt.Sprintf("http://%s/metadata/objects/%s_%d?op_type=create",
+	url := fmt.Sprintf("http://%s/metadata/objects/%s_%d?type=create",
 		os.Getenv("ES_SERVER"), name, version)
+	log.Println("PutMetadata url:", url)
 	request, _ := http.NewRequest("PUT", url, strings.NewReader(doc))
+	request.Header["content-Type"] = []string{"application/json"}
 	r, e := client.Do(request)
 	if e != nil {
+		log.Println("PutMetadata client.Do err:", e)
 		return e
 	}
 	if r.StatusCode == http.StatusConflict {
@@ -89,15 +100,23 @@ func PutMetadata(name string, version int, size int64, hash string) error {
 		result, _ := ioutil.ReadAll(r.Body)
 		return fmt.Errorf("fail to put metadata: %d %s", r.StatusCode, string(result))
 	}
+	log.Println("PutMetadata succ")
 	return nil
 }
 
 func AddVersion(name, hash string, size int64) error {
 	version, e := SearchLatestVersion(name)
 	if e != nil {
+		log.Printf("AddVersion SearchLatestVersion err:%v name:%v\n", e, name)
 		return e
 	}
-	return PutMetadata(name, version.Version+1, size, hash)
+	e = PutMetadata(name, version.Version+1, size, hash)
+	if e != nil {
+		log.Printf("AddVersion PutMetadata err:%v name:%v version:%v size:%v hash:%v\n",
+			e, name, version.Version+1, size, hash)
+		return e
+	}
+	return nil
 }
 
 func SearchAllVersions(name string, from, size int) ([]Metadata, error) {

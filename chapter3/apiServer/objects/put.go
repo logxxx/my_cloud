@@ -19,7 +19,7 @@ func put(w http.ResponseWriter,  r *http.Request) {
 
 	c, e := storeObject(r.Body, url.PathEscape(hash))
 	if e != nil {
-		log.Println(e)
+		log.Println("put storeObject err:", e)
 		w.WriteHeader(c)
 		return
 	}
@@ -32,7 +32,7 @@ func put(w http.ResponseWriter,  r *http.Request) {
 	size := utils.GetSizeFromHeader(r.Header)
 	e = es.AddVersion(name, hash, size)
 	if e != nil {
-		log.Println(e)
+		log.Println("put AddVersion err:", e)
 		w.WriteHeader(http.StatusInternalServerError)
 	}
 }

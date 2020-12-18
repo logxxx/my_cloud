@@ -12,6 +12,7 @@ import (
 
 func main() {
 	os.Setenv("RABBITMQ_SERVER", "amqp://admin:admin@49.232.219.233:5672/")
+	os.Setenv("ES_SERVER", "49.232.219.233:9200")
 	os.Setenv("LISTEN_ADDRESS", "127.0.0.1:8008")
 	go heartbeat.ListenHeartbeat()
 	http.HandleFunc("/objects/", objects.Handler)

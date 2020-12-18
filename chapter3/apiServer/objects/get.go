@@ -18,14 +18,14 @@ func get(w http.ResponseWriter, r *http.Request) {
 	if len(versionId) != 0 {
 		version, e = strconv.Atoi(versionId[0])
 		if e != nil {
-			log.Println(e)
+			log.Println("get Atoi err:", e)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 	}
 	meta, e := es.GetMetadata(name, version)
 	if e != nil {
-		log.Println(e)
+		log.Printf("get GetMetadata err:%v name:%v version:%v\n", e, name, version)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -36,7 +36,7 @@ func get(w http.ResponseWriter, r *http.Request) {
 	object := url.PathEscape(meta.Hash)
 	stream, e := getStream(object)
 	if e != nil {
-		log.Println(e)
+		log.Println("get getStream err:", e)
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
