@@ -83,7 +83,7 @@ func PutMetadata(name string, version int, size int64, hash string) error {
 		name, version, size, hash)
 	log.Println("PutMetadata doc:", doc)
 	client := http.Client{}
-	url := fmt.Sprintf("http://%s/metadata/objects/%s_%d?type=create",
+	url := fmt.Sprintf("http://%s/metadata/objects/%s_%d",
 		os.Getenv("ES_SERVER"), name, version)
 	log.Println("PutMetadata url:", url)
 	request, _ := http.NewRequest("PUT", url, strings.NewReader(doc))
@@ -120,13 +120,15 @@ func AddVersion(name, hash string, size int64) error {
 }
 
 func SearchAllVersions(name string, from, size int) ([]Metadata, error) {
-	url := fmt.Sprintf("http://%s/metadata/_search?sort=name,version&from=%d&size=%d",
+	url := fmt.Sprintf("http://%s/metadata/_search?sort=version&from=%d&size=%d",
 		os.Getenv("ES_SERVER"), from, size)
 	if name != "" {
 		url += "&q=name:"+name
 	}
+	log.Println("SearchAllVersions url:", url)
 	r, e := http.Get(url)
 	if e != nil {
+		log.Println("SearchAllVersions http.Get err:", e)
 		return nil, e
 	}
 	metas := make([]Metadata, 0)
@@ -171,7 +173,7 @@ func SearchVersionStatus(min_doc_count int) ([]Bucket, error) {
 	"size":0,
 	"aggs":{
 		"group_by_name":{
-			"terms":{"field":"name","min_doc_count":%d},
+			"terms":{"field":"name.keyword","min_doc_count":%d},
 			"aggs":{"min_version":{"min":{"field":"version"}}}
 		}
 	}
