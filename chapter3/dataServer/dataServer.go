@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"./temp"
 )
 
 func main() {
@@ -16,6 +17,7 @@ func main() {
 	go heartbeat.StartHeartbeat()
 	go locate.StartLocate()
 	http.HandleFunc("/objects/", objects.Handler)
+	http.HandleFunc("/temp/", temp.Handler)
 	log.Println("dataServer Listening:", os.Getenv("LISTEN_ADDRESS"))
 	log.Fatal(http.ListenAndServe(os.Getenv("LISTEN_ADDRESS"), nil))
 }

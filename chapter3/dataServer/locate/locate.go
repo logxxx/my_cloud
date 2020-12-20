@@ -3,8 +3,13 @@ package locate
 import (
 	"lib/rabbitmq"
 	"os"
+	"path/filepath"
 	"strconv"
+	"sync"
 )
+
+var objects = make(map[string]int)
+var mutex sync.Mutex
 
 func Locate(name string) bool {
 	_, err := os.Stat(name)
@@ -25,5 +30,25 @@ func StartLocate() {
 		if Locate(os.Getenv("STORAGE_ROOT")+ "/objects/" + object) {
 			q.Send(msg.ReplyTo, os.Getenv("LISTEN_ADDRESS"))
 		}
+	}
+}
+
+func Add(hash string) {
+	mutex.Lock()
+	objects[hash] = 1
+	mutex.Unlock()
+}
+
+func Del(hash string) {
+	mutex.Lock()
+	delete(objects, hash)
+	mutex.Unlock()
+}
+
+func CollectObjects() {
+	files, _ := filepath.Glob(os.Getenv("STORAGE_ROOT")+"/objects/*")
+	for i := range files {
+		hash := filepath.Base(files[i])
+		objects[hash] = 1
 	}
 }
